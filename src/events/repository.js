@@ -2,7 +2,7 @@ import { pool } from "../utilities/database-mysql.js";
 
 const columns = ["id", "relation_id", "reference_id", "tags", "detail", "time"];
 
-export const filter = async (
+export const filter = async ({
   relationId,
   referenceId,
   tags,
@@ -10,7 +10,7 @@ export const filter = async (
   timeRange,
   skip,
   take,
-) => {
+}) => {
   let q = `
   select ${columns.join(",")}, cast(id as char) _id
   from events
@@ -25,10 +25,10 @@ export const filter = async (
     conditions.push("reference_id = ?");
     params.push(referenceId);
   }
-  if (tags) {
-    conditions.push("json_contains(tags, ?)");
-    params.push(tags);
-  }
+  tags.forEach((it) => {
+    conditions.push("json_contains(tags, json_array(?))");
+    params.push(it);
+  });
   if (detail) {
     conditions.push("json_contains(detail, ?)");
     params.push(detail);

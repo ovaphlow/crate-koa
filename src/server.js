@@ -3,9 +3,12 @@ import http from "http";
 
 import { logger } from "./utilities/logger-pino.js";
 
-import("dotenv").then((dotenv) => dotenv.config());
+let port = 8000;
 
-const port = parseInt(process.env.PORT, 10) || 8080;
+import("dotenv").then((dotenv) => {
+  dotenv.config();
+  port = parseInt(process.env.PORT, 10) || 8000;
+});
 
 if (isMaster) {
   logger.info(`主进程 PID:${process.pid}`);

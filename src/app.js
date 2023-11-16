@@ -30,10 +30,17 @@ app.on("error", (err, ctx) => {
 });
 
 const router = new Router();
+const prefix = "/crate-api";
 
 (() => {
-  router.get("/core-api/", (ctx) => {
+  router.get(`${prefix}/`, (ctx) => {
     ctx.body = "Hello, world!";
+  });
+})();
+
+(() => {
+  import("./events/endpoint.js").then(({ get }) => {
+    router.get(`/crate-api/events`, get);
   });
 })();
 

@@ -6,7 +6,7 @@ import {
   DB_PASSWORD,
   DB_NAME,
   PROC,
-} from "./configuration.js";
+} from "../configuration.js";
 
 export const pool = mysql.createPool({
   host: DB_HOST,
