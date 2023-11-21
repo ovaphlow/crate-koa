@@ -34,7 +34,7 @@ export const filter = async ({
     params.push(detail);
   }
   if (timeRange.length === 2) {
-    conditions.push("time > ?", "time < ?");
+    conditions.push("time >= ?", "time <= ?");
     params.push(timeRange[0], timeRange[1]);
   }
   if (conditions.length > 0) {
