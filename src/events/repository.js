@@ -12,7 +12,7 @@ export const filter = async ({
   take,
 }) => {
   let q = `
-  select ${columns.join(",")}, cast(id as char) _id
+  select cast(id as char) _id, ${columns.join(",")}
   from events
   `;
   const conditions = [];
@@ -29,10 +29,10 @@ export const filter = async ({
     conditions.push("json_contains(tags, json_array(?))");
     params.push(it);
   });
-  if (detail) {
-    conditions.push("json_contains(detail, ?)");
-    params.push(detail);
-  }
+  Object.keys(detail).forEach((key) => {
+    conditions.push("json_contains(detail, json_object(?, ?))");
+    params.push(key, detail[key]);
+  });
   if (timeRange.length === 2) {
     conditions.push("time >= ?", "time <= ?");
     params.push(timeRange[0], timeRange[1]);
