@@ -1,6 +1,8 @@
-import { filter } from "./repository.js";
-import { arrayToObject } from "../utilities/array-to-object.js";
+import { defaultFilter } from "./repository.js";
 
+/**
+ * @param {import("koa").Context} ctx
+ */
 export const get = async (ctx) => {
   const { id } = ctx.params;
   if (id) {
@@ -8,27 +10,21 @@ export const get = async (ctx) => {
     return;
   }
   const { option } = ctx.request.query || "";
-  if (option === "") {
-    const {
-      relationId,
-      referenceId,
-      tags,
-      detail,
-      timeRangeBegin,
-      timeRangeEnd,
-      skip,
-      take,
-    } = ctx.request.query;
-    ctx.response.body = await filter({
-      relationId: relationId || 0,
-      referenceId: referenceId || 0,
-      tags: tags ? tags.split(",") : [],
-      detail: detail ? arrayToObject(detail.split(",")) : {},
-      timeRange:
-        timeRangeBegin && timeRangeEnd ? [timeRangeBegin, timeRangeEnd] : [],
-      skip: skip || 0,
-      take: take || 10,
-    });
+  if (option === "default") {
+    const take = parseInt(ctx.request.query["take"]?.toString() || "10");
+    const skip = parseInt(ctx.request.query["take"]?.toString() || "0");
+    const equal = (ctx.request.query["equal"]?.toString() || "[]").split(",");
+    const objectContain = (
+      ctx.request.query["object-contain"]?.toString() || "[]"
+    ).split(",");
+    const arrayContain = (
+      ctx.request.query["array-contain"]?.toString() || "[]"
+    ).split(",");
+    const like = (ctx.request.query["like"]?.toString() || "[]").split(",");
+    ctx.response.body = await defaultFilter(
+      { skip, take },
+      { equal, objectContain, arrayContain, like },
+    );
     return;
   }
   ctx.response.status = 406;

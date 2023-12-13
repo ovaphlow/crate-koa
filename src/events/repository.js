@@ -1,55 +1,50 @@
+import {
+  arrayContainBuilder,
+  equalBuilder,
+  likeBuilder,
+  objectContainBuilder,
+} from "../utilities/condition-builder.js";
 import { pool } from "../utilities/database-mysql.js";
 
 const columns = ["id", "relation_id", "reference_id", "tags", "detail", "time"];
 
-export const filter = async ({
-  relationId,
-  referenceId,
-  tags,
-  detail,
-  timeRange,
-  skip,
-  take,
-}) => {
-  let q = `
-  select cast(id as char) _id, ${columns.join(",")}
-  from events
-  `;
+/**
+ * @param {object} pagination
+ * @param {number} pagination.skip
+ * @param {number} pagination.take
+ * @param {object} option
+ * @param {string[]} option.equal
+ * @param {string[]} option.objectContain
+ * @param {string[]} option.arrayContain
+ * @param {string[]} option.like
+ */
+export async function defaultFilter(
+  { skip, take },
+  { equal, objectContain, arrayContain, like },
+) {
+  let q = `select cast(id as char) _id, ${columns.join(",")} from events`;
+  /** @type {string[]} */
   const conditions = [];
+  /** @type {string[]} */
   const params = [];
-  if (relationId > 0) {
-    conditions.push("relation_id = ?");
-    params.push(relationId);
+  if (equal.length > 0 && equal.length % 2 === 0) {
+    equalBuilder(equal, conditions, params);
   }
-  if (referenceId > 0) {
-    conditions.push("reference_id = ?");
-    params.push(referenceId);
+  if (objectContain.length > 0 && objectContain.length % 3 === 0) {
+    objectContainBuilder(objectContain, conditions, params);
   }
-  tags.forEach((it) => {
-    conditions.push("json_contains(tags, json_array(?))");
-    params.push(it);
-  });
-  Object.keys(detail).forEach((key) => {
-    conditions.push("json_contains(detail, json_object(?, ?))");
-    params.push(key, detail[key]);
-  });
-  if (timeRange.length === 2) {
-    conditions.push("time >= ?", "time <= ?");
-    params.push(timeRange[0], timeRange[1]);
+  if (arrayContain.length > 0 && arrayContain.length % 2 === 0) {
+    arrayContainBuilder(arrayContain, conditions, params);
+  }
+  if (like.length > 0 && like.length % 2 === 0) {
+    likeBuilder(like, conditions, params);
   }
   if (conditions.length > 0) {
-    q = `
-    ${q}
-    where ${conditions.join(" and ")}
-    `;
+    q = `${q} where ${conditions.join(" and ")}`;
   }
-  q = `
-  ${q}
-  order by id desc
-  limit ${skip}, ${take}
-  `;
+  q = `${q} order by id desc limit ${skip}, ${take}`;
   console.info(q);
   const client = pool.promise();
   const [result] = await client.query(q, params);
   return result;
-};
+}

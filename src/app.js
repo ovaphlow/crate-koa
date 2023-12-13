@@ -17,10 +17,13 @@ app.use(async (ctx, next) => {
   try {
     await next();
   } catch (error) {
-    ctx.status = error.statusCode || error.status || 500;
-    ctx.body = {
-      message: error.message,
-    };
+    if (error instanceof Error) {
+      ctx.response.status = 500;
+      ctx.response.body = { message: error.message };
+    } else {
+      ctx.response.status = 500;
+      ctx.response.body = { message: "服务器错误" };
+    }
   }
 });
 
@@ -33,9 +36,11 @@ const router = new Router();
 const prefix = "/crate-api";
 
 (() => {
-  router.get(`${prefix}/`, (ctx) => {
-    ctx.body = "Hello, world!";
-  });
+  router.get(`${prefix}/`,
+    /** @param {import("koa").Context} ctx */
+    (ctx) => {
+      ctx.body = "Hello, world!";
+    });
 })();
 
 (() => {

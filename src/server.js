@@ -1,4 +1,4 @@
-import cluster, { isMaster } from "cluster";
+import cluster from "cluster";
 import http from "http";
 
 import { logger } from "./utilities/logger-pino.js";
@@ -7,13 +7,13 @@ let port = 8000;
 
 import("dotenv").then((dotenv) => {
   dotenv.config();
-  port = parseInt(process.env.PORT, 10) || 8000;
+  port = parseInt(process.env.PORT?.toString() || "8000", 10);
 });
 
-if (isMaster) {
+if (cluster.isPrimary) {
   logger.info(`主进程 PID:${process.pid}`);
 
-  for (let i = 0; i < parseInt(process.env.PROC || 1, 10); i += 1) {
+  for (let i = 0; i < parseInt(process.env.PROC || "1", 10); i += 1) {
     cluster.fork();
   }
 
