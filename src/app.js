@@ -36,11 +36,13 @@ const router = new Router();
 const prefix = "/crate-api";
 
 (() => {
-  router.get(`${prefix}/`,
+  router.get(
+    `${prefix}/`,
     /** @param {import("koa").Context} ctx */
     (ctx) => {
       ctx.body = "Hello, world!";
-    });
+    },
+  );
 })();
 
 (() => {
