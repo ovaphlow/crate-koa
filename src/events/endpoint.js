@@ -1,4 +1,4 @@
-import { defaultFilter } from "./repository.js";
+import { retrieve } from "../utilities/shared-repository.js";
 
 /**
  * @param {import("koa").Context} ctx
@@ -30,19 +30,24 @@ export const get = async (ctx) => {
     const greater = (ctx.request.query["greater"]?.toString() || "[]").split(
       ",",
     );
-    ctx.response.body = await defaultFilter(
-      { skip, take },
-      {
-        equal,
-        objectContain,
-        arrayContain,
-        like,
-        objectLike,
-        inList,
-        lesser,
-        greater,
-      },
-    );
+    const result = await retrieve("event", skip, take, {
+      equal,
+      objectContain,
+      arrayContain,
+      like,
+      objectLike,
+      inList,
+      lesser,
+      greater,
+    });
+    result.forEach((it) => {
+      it.tags = JSON.stringify(it.tags);
+      it.detail = JSON.stringify(it.detail);
+      it._id = it["id"].toString();
+      it._relationId = it["relation_id"].toString();
+      it._referenceId = it["reference_id"].toString();
+    });
+    ctx.response.body = result;
     return;
   }
   ctx.response.status = 406;
