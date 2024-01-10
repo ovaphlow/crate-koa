@@ -47,7 +47,7 @@ const prefix = "/crate-api";
 
 (() => {
   import("./events/endpoint.js").then(({ get }) => {
-    router.get(`/crate-api/events`, get);
+    router.get(`/crate-api/event`, get);
   });
 })();
 

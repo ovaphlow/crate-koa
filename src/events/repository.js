@@ -1,30 +1,21 @@
-import {
-  inBuilder,
-  arrayContainBuilder,
-  equalBuilder,
-  likeBuilder,
-  objectContainBuilder,
-  objectLikeBuilder,
-  lesserBuilder,
-  greaterBuilder,
-} from "../utilities/condition-builder.js";
+import * as conditionBuilder from "../utilities/condition-builder.js";
 import { pool } from "../utilities/database-mysql.js";
 
 const columns = ["id", "relation_id", "reference_id", "tags", "detail", "time"];
 
 /**
- * @param {object} pagination
- * @param {number} pagination.skip
- * @param {number} pagination.take
  * @param {object} option
- * @param {string[]} option.equal
- * @param {string[]} option.objectContain
- * @param {string[]} option.arrayContain
- * @param {string[]} option.like
- * @param {string[]} option.objectLike
- * @param {string[]} option.inList
- * @param {string[]} option.lesser
- * @param {string[]} option.greater
+ * @param {number} option.skip
+ * @param {number} option.take
+ * @param {object} filter
+ * @param {string[]} filter.equal
+ * @param {string[]} filter.objectContain
+ * @param {string[]} filter.arrayContain
+ * @param {string[]} filter.like
+ * @param {string[]} filter.objectLike
+ * @param {string[]} filter.inList
+ * @param {string[]} filter.lesser
+ * @param {string[]} filter.greater
  */
 export async function defaultFilter(
   { skip, take },
@@ -39,34 +30,50 @@ export async function defaultFilter(
     greater,
   },
 ) {
-  let q = `select cast(id as char) _id, ${columns.join(",")} from events`;
+  let q = `select ${columns.join(",")} from events`;
   /** @type {string[]} */
   const conditions = [];
   /** @type {string[]} */
   const params = [];
-  if (equal.length > 0 && equal.length % 2 === 0) {
-    equalBuilder(equal, conditions, params);
+  if (equal.length > 0) {
+    const { c, p } = conditionBuilder.equal(equal);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (objectContain.length > 0 && objectContain.length % 3 === 0) {
-    objectContainBuilder(objectContain, conditions, params);
+  if (objectContain.length) {
+    const { c, p } = conditionBuilder.objectContain(objectContain);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (arrayContain.length > 0 && arrayContain.length % 2 === 0) {
-    arrayContainBuilder(arrayContain, conditions, params);
+  if (arrayContain.length) {
+    const { c, p } = conditionBuilder.arrayContain(arrayContain);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (like.length > 0 && like.length % 2 === 0) {
-    likeBuilder(like, conditions, params);
+  if (like.length) {
+    const { c, p } = conditionBuilder.like(like);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (objectLike.length > 0 && objectLike.length % 3 === 0) {
-    objectLikeBuilder(objectLike, conditions, params);
+  if (objectLike.length) {
+    const { c, p } = conditionBuilder.objectLike(objectLike);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (inList.length > 1) {
-    inBuilder(inList, conditions, params);
+  if (inList.length) {
+    const { c, p } = conditionBuilder.inList(inList);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (lesser.length > 0 && lesser.length % 2 === 0) {
-    lesserBuilder(lesser, conditions, params);
+  if (lesser.length) {
+    const { c, p } = conditionBuilder.lesser(lesser);
+    conditions.push(...c);
+    params.push(...p);
   }
-  if (greater.length > 0 && greater.length % 2 === 0) {
-    greaterBuilder(greater, conditions, params);
+  if (greater.length) {
+    const { c, p } = conditionBuilder.greater(greater);
+    conditions.push(...c);
+    params.push(...p);
   }
   if (conditions.length > 0) {
     q = `${q} where ${conditions.join(" and ")}`;
@@ -75,5 +82,17 @@ export async function defaultFilter(
   console.info(q);
   const client = pool.promise();
   const [result] = await client.execute(q, params);
-  return result;
+  const rows = [];
+  /** @ts-ignore */
+  for (const it of result) {
+    rows.push({
+      ...it,
+      tags: JSON.stringify(it.tags),
+      detail: JSON.stringify(it.detail),
+      _id: it.id?.toString(),
+      _relationId: it.relation_id?.toString(),
+      _referenceId: it.reference_id?.toString(),
+    });
+  }
+  return rows;
 }
